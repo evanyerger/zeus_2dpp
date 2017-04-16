@@ -1,0 +1,8 @@
+This is the repository for the ZEUS-2D term project by Evan Yerger and
+Valentin Skoutnev.
+
+It is assumed simulation outputs are stored in a directory named sims in the
+same directory as this repository i.e. the relative path from this directory is
+../sims/.
+
+
