@@ -37,9 +37,7 @@ int main(int argc, char *argv[])
   Consts c;
   Grid g;
   TimeKeeper timer;
-  std::cout << "before load_sim" << std::endl;
   load_sim(path, &c, &g, &timer, 0);
-  std::cout << "after load_sim" << std::endl;
 
   //-4: Set function pointers and allocate temporary memory-------------------//
   source_init(c.size);
