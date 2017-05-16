@@ -3,7 +3,7 @@
 #include "source.h"
 
 // Temporary Values
-int fwd, bkwd, bkwd2;
+static int fwd, bkwd, bkwd2;
 double val, divv;
 
 // Pointers to temporary arrays
@@ -148,7 +148,7 @@ static void subThree(Consts* c, Grid* g, double dt)
   for (int j=c->start2; j<c->end2; j++) for (int i=c->start1; i<c->end1; i++)
   {
     fwd = j*c->full2 + i;
-    divv = (g->v1[fwd+1] - g->v1[fwd] + g->v2[(j+1)*c->full2+i] - g->v2[fwd])/c->dv;
+    divv = (g->v1[fwd+1] - g->v1[fwd])/c->dx + (g->v2[(j+1)*c->full2+i] - g->v2[fwd])/c->dy;
     g->e[fwd] = (1. - .5*dt*val*divv)/(1 + .5*dt*val*divv)*enb[fwd];
   }
 }

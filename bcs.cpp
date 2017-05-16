@@ -5,10 +5,10 @@ int idx, ghstidx;
 
 // function pointers to boundary conditions updators
 // Left, Right, Top, and Bottom
-void (*bcL)() = nullptr;
-void (*bcR)() = nullptr;
-void (*bcT)() = nullptr;
-void (*bcB)() = nullptr;
+void (*bcL)(Consts*, Grid*) = nullptr;
+void (*bcR)(Consts*, Grid*) = nullptr;
+void (*bcT)(Consts*, Grid*) = nullptr;
+void (*bcB)(Consts*, Grid*) = nullptr;
 
 // forward declaration of private functions
 #ifdef BC_P1
@@ -53,7 +53,7 @@ static void periodicL(Consts* c, Grid* g)
   // -- work from primary variables
   for (int j=c->nghost; j<c->N2+c->nghost; j++) for (int i=0; i<c->nghost; i++)
   {
-    ghstidx = j*c->full1 + i; idx = ghostidx + c->N1;
+    ghstidx = j*c->full1 + i; idx = ghstidx + c->N1;
     g->p[ghstidx] = g->p[idx];
     g->d[ghstidx] = g->d[idx];
     g->e[ghstidx] = g->e[idx];
@@ -81,7 +81,7 @@ static void periodicR(Consts* c, Grid* g)
   // -- work from primary variables
   for (int j=c->nghost; j<c->N2+c->nghost; j++) for (int i=c->N1+c->nghost; i<c->full1; i++)
   {
-    ghstidx = j*c->full1 + i; idx = ghostidx - c->N1;
+    ghstidx = j*c->full1 + i; idx = ghstidx - c->N1;
     g->p[ghstidx] = g->p[idx];
     g->d[ghstidx] = g->d[idx];
     g->e[ghstidx] = g->e[idx];
@@ -112,7 +112,7 @@ static void periodicT(Consts* c, Grid* g)
   // -- work from primary variables
   for (int j=c->N2+c->nghost; j<c->full2; j++) for (int i=c->nghost; i<c->N1+c->nghost; i++)
   {
-    ghstidx = j*c->full1 + i; idx = ghostidx + c->N2*c->full1;
+    ghstidx = j*c->full1 + i; idx = ghstidx + c->N2*c->full1;
     g->p[ghstidx] = g->p[idx];
     g->d[ghstidx] = g->d[idx];
     g->e[ghstidx] = g->e[idx];
@@ -130,7 +130,7 @@ static void periodicT(Consts* c, Grid* g)
   for (int i=c->nghost; i<c->N1+c->nghost; i++)
   {
     ghstidx = (c->full2-1)*c->full1 + i;
-    g->v2[ghstidx] = g->v2[ghstidx - c*N2*c->full1];
+    g->v2[ghstidx] = g->v2[ghstidx - c->N2*c->full1];
   }
 }
 
@@ -140,7 +140,7 @@ static void periodicB(Consts* c, Grid* g)
   // -- work from primary variables
   for (int j=0; j<c->nghost; j++) for (int i=c->nghost; i<c->N1+c->nghost; i++)
   {
-    ghstidx = j*c->full1 + i; idx = ghostidx + c->N2*c->full1;
+    ghstidx = j*c->full1 + i; idx = ghstidx + c->N2*c->full1;
     g->p[ghstidx] = g->p[idx];
     g->d[ghstidx] = g->d[idx];
     g->e[ghstidx] = g->e[idx];

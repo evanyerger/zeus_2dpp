@@ -8,7 +8,7 @@
 
 void source_init(int);
 
-void source_step(Consts* c, Grid* g);
+void source_step(Consts*, Grid*, double);
 
 void source_destruct(void);
 
