@@ -12,7 +12,7 @@ struct Grid
 #endif
   Grid ();
   void init (int);
-  void destruct (void)
+  void destruct (void);
 };
 
 // Public Functions Declarations
