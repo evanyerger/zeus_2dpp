@@ -1,9 +1,13 @@
 #include <iostream>
 #include <fstream>
+#include <string>
+#include "io.h"
 #include "grids.h"
 #include "constants.h"
 #include "source.h"
 #include "timestep.h"
+#include "bcs.h"
+#include "transport.h"
 
 //--------------------------------------------------------------------------//
 // Zeus_2d main program
@@ -19,80 +23,59 @@
 
 int main(int argc, char *argv[])
 {
-  //-1: Initialize and set constants------------------------------------------//
-  Consts consts (256, 256, 2);
-
-  //-2: Initialize grids------------------------------------------------------//
-  Grid grid (consts.size);
-
-  //-3: Set initial conditions from file and compute initial dt---------------//
+  //-1: Initialize, set constants, and load initial conditions----------------//
+  std::string sim_dir = "../sims/";
+  if (argc < 2)
+  {
+    std::cout << "Please provide a simulation name." << std::endl;
+    return 0;
+  }
+  std::string sim_name = std::string(argv[1]);
+  std::string path = sim_dir + sim_name + "/";
+  int check = check_setup(path);
+  if (check == 1) {return 0;}
+  Consts c;
+  Grid g;
   TimeKeeper timer;
+  std::cout << "before load_sim" << std::endl;
+  load_sim(path, &c, &g, &timer, 0);
+  std::cout << "after load_sim" << std::endl;
 
-
-  //-4: Allocate temporary memory---------------------------------------------//
-  source_init(consts.size);
-  grids_init(consts.size);
+  //-4: Set function pointers and allocate temporary memory-------------------//
+  source_init(c.size);
+  transport_init(c.size);
+  bcs_init();
 
   //-5: Main Loop-------------------------------------------------------------//
-  int maxits = 10000;
+  std::cout << "Starting Main Loop" << std::endl;
+  double max_time = 2.0, dump_int = .1;
   clock_t time = clock();
-  while (timer.nits<maxits)
+  while (timer.time<max_time)
   {
     //---5.1: Source Step-----------------------------------------------------//
-#ifdef SELT_GRAVITY
+#ifdef SELF_GRAVITY
     //poisson solver
 #endif
-    source_step(&consts, &grid, timer.dt);
+    source_step(&c, &g, timer.dt);
     //---5.2: Transport Step--------------------------------------------------//
+    transport_step(&c, &g, timer.dt);
 
     //---5.3: Boundary Conditions---------------------------------------------//
+    update_bcs(&c, &g);
+
+    //---5.4: Data IO---------------------------------------------------------//
+    data_dump(path, &c, &g, dump_int, &timer);
 
     //---5.4: New Timestep----------------------------------------------------//
-    timer.DeltaT();
+    timer.DeltaT(&c, &g);
   }
   std::cout << "Main loop took " << clock() - time << " cycles" << std::endl;
 
   //-6: Final Output and Memory Deallocation----------------------------------//
+  save_sim(path);
+  g.destruct();
+  grid_destruct();
   source_destruct();
-  grids_destruct();
+  transport_destruct();
 }
-
-/*int main()
-{
-  // Array Size and Dimensions//
-  const int Nx = 256, Ny = 256, ghosts = 2;
-  GridSpecs gs (Nx, Ny, ghosts);
-  GridSpecs* ptgs = &gs;
-
-  // Define Constants //
-  // dx, dy, dt, gamma, C0 (safety factor), C2 (l/dx), vg1, vg2 (grid velocities) //
-  int nparams = 8;
-  double params[nparams] = {.1, .1, 10, 1.4, .5, 3., 0., 0.};
-
-  // Define Arrays //
-  // p, d, e, phi, q1, q2, v1, v2 //
-  int nvars = 8;
-  double** gridarray = new double* [2*nvars];
-  for (int i=0; i<2*nvars; i++) {gridarray[i] = new double[gs.length];}
-  int* current_idx = new int[nvars];
-  for (int i=0; i<nvars; i++) {current_idx[i] = 0.0;}
-  double* temp = new double[gs.length];
-  for (int i=0; i<gs.length; i++) {temp[i] = 0.0;}
-  Grids grid (ptgs, current_idx, gridarray, params, nvars, temp);
-  Grids* ptgrid = &grid;
-
-  // Initial Conditions //
-  zeros(ptgs, ptgrid);
-
-  // Main Loop //
-  int maxits = 10000;
-  for (int it=0; it<maxits; it++)
-  {
-    // calculate dt //
-    grid.deltat();
-
-
-  }
-  return 0;
-}*/
 
