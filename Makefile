@@ -1,10 +1,13 @@
 CC = g++
 CFLAGS = -c -Wall -std=c++11
-CPPFLAGS = -DVLEER -DBC_PERIODIC #-DMHD -DSHEAR -DSELF_GRAVITY
+CPPFLAGS = -DVLEER -DBC_P1 -DBC_P2 #-DMHD -DSHEAR -DSELF_GRAVITY
 SOURCES = zeus_main.cpp \
 					constants.cpp \
 					grids.cpp \
-					source.cpp
+					source.cpp \
+					timestep.cpp \
+					bcs.cpp \
+					transport.cpp
 OBJECTS = ${SOURCES:.cpp=.o}
 #EXEDIR = ../bin/
 EXEC = main
@@ -24,6 +27,15 @@ grids.o: grids.cpp
 	${CC} ${CFLAGS} ${CPPFLAGS} $<
 
 source.o: source.cpp
+	${CC} ${CFLAGS} ${CPPFLAGS} $<
+
+timestep.o: timestep.cpp
+	${CC} ${CFLAGS} ${CPPFLAGS} $<
+
+bcs.o: bcs.cpp
+	${CC} ${CFLAGS} ${CPPFLAGS} $<
+
+transport.o: transport.cpp
 	${CC} ${CFLAGS} ${CPPFLAGS} $<
 
 .PHONY: clean

@@ -8,10 +8,11 @@ struct Grid
 {
   double *p, *d, *e, *phi, *v1, *v2, *v3;
 #ifdef MHD
-  //double *b1, *b2, *b3; OHTERS????
+  double *b1, *b2, *b3, emf1*, emf2*, emf3*;
 #endif
   Grid ();
-  Grid (int);
+  void init (int);
+  void destruct (void)
 };
 
 // Public Functions Declarations
@@ -19,9 +20,9 @@ double* array_init(int);
 
 void array_destruct(double*);
 
-void grids_init(int);
+void grid_init(int);
 
-void grids_destruct(void);
+void grid_destruct(void);
 
 double* C_a(Consts*, Grid*);
 

@@ -20,16 +20,16 @@ void array_destruct(double* ary)
   delete[] ary;
 }
 
-//   grids_init(int size)
-//     Initializes the temporary array(s) needed for public functions
-void grids_init(int size)
+//   grid_init(int size)
+//     allocates memory for temporary array
+void grid_init(int size)
 {
   temp = array_init(size);
 }
 
-//   grids_destruct(void)
-//     Frees memory ossociated with temporary array(s) used in public functions
-void grids_destruct(void)
+//   grid_destruct(void)
+//     frees memeory for temporary array
+void grid_destruct(void)
 {
   array_destruct(temp);
 }
@@ -82,25 +82,29 @@ double* difference(Consts* c, double* ary, int dir=0) //difference an array (use
 //     default constructor for Grids struct
 Grid::Grid(void)
 {
-  p = array_init(128*128);
-  d = array_init(128*128);
-  e = array_init(128*128);
+  p = nullptr;
+  d = nullptr;
+  e = nullptr;
 #ifdef SELF_GRAVITY
-  phi = array_init(128*128);
+  phi = nullptr;
 #endif
-  v1 = array_init(128*128);
-  v2 = array_init(128*128);
+  v1 = nullptr;
+  v2 = nullptr;
+  v3 = nullptr;
 #ifdef MHD
-  b1 = array_init(128*128);
-  b2 = array_init(128*128);
-  b3 = array_init(128*128);
+  b1 = nullptr;
+  b2 = nullptr;
+  b3 = nullptr;
+  emf1 = nullptr;
+  emf2 = nullptr;
+  emf3 = nullptr;
 #endif
 }
 
 
 //   Grid::Grid(int size)
 //     constructor for Grids struct with array size: size
-Grid::Grid(int size)
+void Grid::init(int size)
 {
   p = array_init(size);
   d = array_init(size);
@@ -110,103 +114,35 @@ Grid::Grid(int size)
 #endif
   v1 = array_init(size);
   v2 = array_init(size);
+  v3 = array_init(size);
 #ifdef MHD
   b1 = array_init(size);
   b2 = array_init(size);
   b3 = array_init(size);
+  emf1 = array_init(size);
+  emf2 = array_init(size);
+  emf3 = array_init(size);
 #endif
 }
 
-
-/* Container for information on the grids */
-
-/*GridSpecs::GridSpecs(int a, int b, int c)
+void Grid::destruct(void)
 {
-  Nx = a;
-  Ny = b;
-  ghosts = c;
-  fullx = Nx + 2*ghosts;
-  fully = Ny + 2*ghosts;
-  length = fullx * fully;
-  startx = ghosts;
-  starty = ghosts;
-  endx = Nx - ghosts;
-  endy = Ny - ghosts;
+  array_destruct(p);
+  array_destruct(d);
+  array_destruct(e);
+#ifdef SELF_GRAVITY
+  array_destruct(phi);
+#endif
+  array_destruct(v1);
+  array_destruct(v2);
+  array_destruct(v3);
+#ifdef MHD
+  array_destruct(b1);
+  array_destruct(b2);
+  array_destruct(b3);
+  array_destruct(emf1);
+  array_destruct(emf2);
+  array_destruct(emf3);
+#endif
 }
 
-Grids::Grids(GridSpecs* ptgs, int* a, double** grida, double* b, int c, double* t)
-{
-  gs = ptgs;
-  current_idx = a;
-  params = b;
-  nvars = c;
-  gridarray = grida;
-  temp = t;
-  dt1 = 0;
-  dt2 = 0;
-  dt3 = 0;
-  dt4 = 0;
-  newdt = 0;
-  dt = 1000;
-}
-
-double* Grids::current(int i) //returns current array of specified variable
-{
-  return gridarray[2*i + current_idx[i]];
-}
-
-double* Grids::next(int i) //returns free array of specified variable
-{
-  current_idx[i] = (current_idx[i] + 1) % 2;
-  return gridarray[2*i + current_idx[i]];
-}
-
-double Grids::ary_max(double* ary) //find maximum of an array
-{
-  double max = ary[0];
-  for (int i=1; i<gs->length; i++) {if (ary[i] > max) {max = ary[i];}}
-  return max;
-}
-
-double* Grids::difference(double* ary, int dir=0) //difference an array (used in dt calculation)
-{
-  int fwd, bkwd;
-  if (dir == 0)
-  {
-    for (int i=gs->startx; i<gs->endx; i++) for (int j=starty; j<gs->endy; j++)
-    {
-      fwd = i*gs->fullx + j;
-      bkwd = (i - 1)*gs->fullx + j;
-      temp[fwd] = ary[fwd] - ary[bkwd];
-    }
-  }
-  else
-  {
-    for (int i=gs->startx; i<gs->endx; i++) for (int j=starty; j<gs->endy; j++)
-    {
-      fwd = i*gs->fullx + j;
-      bkwd = i*gs->fullx + j - 1;
-      temp[fwd] = ary[fwd] - ary[bkwd];
-    }
-  }
-  return &temp;
-}
-
-double Grids::avg_c_a() //Average adiabatic sound speed
-{
-  double sum = 0.0;
-  for (int i=0; i<gs->length; i++) {sum += current(0)[i]/current(1)[i];}
-  return params[3] * sum;
-}
-
-void Grids::deltat() //Calculate dt for stability
-{
-  dt1 = ((params[0] < params[1]) ? params[0] : params[1])/avg_c_a();
-  dt2 = params[0] / (ary_max(current(6)) - params[6]);
-  dt3 = params[1] / (ary_max(current(7)) - params[7]);
-  double one = .25 * params[0] / params[5] / ary_max(difference(current(6)));
-  double two = .25 * params[1] / params[5] / ary_max(difference(current(7)));
-  dt4 = (one < two) ? one : two;
-  newdt = params[4] / std::sqrt(1./(dt1*dt1) + 1./(dt2*dt2) + 1./(dt3*dt3) + 1./(dt4*dt4));
-  dt = (newdt > 1.3*dt) ? 1.3*dt : newdt;
-}*/
