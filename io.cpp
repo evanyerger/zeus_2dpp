@@ -9,7 +9,7 @@
 #include "grids.h"
 
 static int version;
-std::vector<std::string> statevector;
+std::vector<std::string> statevector ;
 std::vector<double> times;
 static int ndumps, nsteps, N1, N2, nghost;
 static double last_dt;
@@ -49,7 +49,7 @@ void load_sim(std::string path, Consts* c, Grid* g, TimeKeeper* timer, int start
       double t = std::stod(time_str.substr(0, time_str.find(",")));
       times.push_back(t);
     }
-    std::cout << times.back() << std::endl;
+    std::cout << "vector length " << statevector.size() << std::endl;
     last_dt = std::stof(statevector[4]);
     N1 = std::stoi(statevector[5]);
     N2 = std::stoi(statevector[6]);
