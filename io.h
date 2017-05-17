@@ -7,9 +7,9 @@
 
 int check_setup(std::string);
 void load_sim(std::string, Consts*, Grid*, TimeKeeper*, int);
-void save_sim(std::string);
+void save_sim(std::string, double);
 void data_dump(std::string, Consts*, Grid*, double, TimeKeeper*);
 void load_variable(std::string, std::string, Consts*, double*, int);
 void save_variable(std::string, std::string, Consts*, double*, int);
-
+//void print_variable(Consts*, double*)
 #endif

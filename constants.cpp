@@ -56,7 +56,7 @@ void Consts::init(int nx, int ny, int nGhost)
   dy = 1./((double)N2 - 1.);
   dz = (dx + dy)/2.;
   dv = dx*dy*dz;
-  gamma = 5/3;
+  gamma = 5./3.;
   c0 = 0.5; //safety factor
   c2 = 3.;
   v1g = 0.;

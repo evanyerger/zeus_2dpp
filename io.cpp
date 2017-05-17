@@ -49,20 +49,18 @@ void load_sim(std::string path, Consts* c, Grid* g, TimeKeeper* timer, int start
       double t = std::stod(time_str.substr(0, time_str.find(",")));
       times.push_back(t);
     }
-    std::cout << "vector length " << statevector.size() << std::endl;
     last_dt = std::stof(statevector[4]);
     N1 = std::stoi(statevector[5]);
     N2 = std::stoi(statevector[6]);
     nghost = std::stoi(statevector[7]);
   }
-  std::cout << ndumps << " " << nsteps << " " << last_dt
-    << " " << N1 << " " << N2 << " " << nghost << std::endl;
   // initialize constants
   c->init(N1, N2, nghost);
   // initialize and load grids
   g->init(c->size);
   grid_init(c->size);
   if (start_step < 0) {start_step = ndumps;}
+  if (start_step == 0) {ndumps = 0; nsteps = 0; last_dt = 0;}
   load_variable("p", path, c, g->p, start_step);
   load_variable("d", path, c, g->d, start_step);
   load_variable("e", path, c, g->e, start_step);
@@ -85,9 +83,9 @@ void load_sim(std::string path, Consts* c, Grid* g, TimeKeeper* timer, int start
   if (start_step == 0) {timer->DeltaTZero(c, g);} // set dt to calculated value
 }
 
-void save_sim(std::string path)
+void save_sim(std::string path, double last_dt)
 {
-  std::fstream statefile;
+  std::ofstream statefile;
   statefile.open((path + "state.txt").c_str(), std::ios::trunc);
   if (!statefile.is_open()) {std::cout << "State is not saved correctly!" << std::endl;}
   statefile << version << std::endl;
@@ -95,6 +93,7 @@ void save_sim(std::string path)
   statefile << nsteps  << std::endl;
   for (int i=0; i<(int)times.size(); i++) {statefile << times[i] << ",";}
   statefile << std::endl;
+  statefile << last_dt << std::endl;
   statefile << N1 << std::endl;
   statefile << N2 << std::endl;
   statefile << nghost << std::endl;
@@ -106,6 +105,7 @@ void data_dump(std::string path, Consts* c, Grid* g, double dump_int, TimeKeeper
 {
   if (timer->time > (double)(ndumps + 1)*dump_int)
   {
+    std::cout << "data dump at time " << timer->time << std::endl;
     ndumps++;
     times.push_back(timer->time);
     last_dt = timer->dt;
@@ -143,7 +143,11 @@ void load_variable(std::string var, std::string path, Consts* c, double* ary, in
   std::string data;
   std::getline(file, data);
   file.close();
-  for (int i=0; i<c->size; i++) {ary[i] = std::stod(data.substr(0, data.find(",")));}
+  for (int i=0; i<c->size; i++)
+  {
+    ary[i] = std::stod(data.substr(0, data.find(",")));
+    data = data.substr(data.find(",")+1, data.length());
+  }
 }
 
 void save_variable(std::string var, std::string path, Consts* c, double* ary, int step=0)
@@ -158,3 +162,5 @@ void save_variable(std::string var, std::string path, Consts* c, double* ary, in
   file << std::endl;
   file.close();
 }
+
+

@@ -9,6 +9,17 @@
 #include "bcs.h"
 #include "transport.h"
 
+static void print_variable(Consts* c, double* ary)
+{
+ for (int j=c->full2-1; j>=0; j--)
+ {
+   for (int i=0; i<c->full1; i++)
+   {
+     std::cout << ary[j*c->full1 + i] << " ";
+   }
+ std::cout << std::endl;
+  }
+}
 //--------------------------------------------------------------------------//
 // Zeus_2d main program
 //
@@ -37,8 +48,9 @@ int main(int argc, char *argv[])
   Consts c;
   Grid g;
   TimeKeeper timer;
+  std::cout << "start load" << std::endl;
   load_sim(path, &c, &g, &timer, 0);
-
+  std::cout << "dt0: " << timer.dt << std::endl;
   //-4: Set function pointers and allocate temporary memory-------------------//
   source_init(c.size);
   transport_init(c.size);
@@ -46,7 +58,7 @@ int main(int argc, char *argv[])
 
   //-5: Main Loop-------------------------------------------------------------//
   std::cout << "Starting Main Loop" << std::endl;
-  double max_time = 2.0, dump_int = .1;
+  double max_time = 0.101, dump_int = .01;
   clock_t time = clock();
   while (timer.time<max_time)
   {
@@ -55,9 +67,9 @@ int main(int argc, char *argv[])
     //poisson solver
 #endif
     source_step(&c, &g, timer.dt);
+    update_bcs(&c, &g);
     //---5.2: Transport Step--------------------------------------------------//
     transport_step(&c, &g, timer.dt);
-
     //---5.3: Boundary Conditions---------------------------------------------//
     update_bcs(&c, &g);
 
@@ -70,7 +82,7 @@ int main(int argc, char *argv[])
   std::cout << "Main loop took " << clock() - time << " cycles" << std::endl;
 
   //-6: Final Output and Memory Deallocation----------------------------------//
-  save_sim(path);
+  save_sim(path, timer.dt);
   g.destruct();
   grid_destruct();
   source_destruct();
