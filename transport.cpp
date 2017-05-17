@@ -1,9 +1,23 @@
+#include <iostream>
 #include <cmath>
 #include "constants.h"
 #include "grids.h"
+#include "bcs.h"
 
+static void print_variable(Consts* c, double* ary)
+{
+  for (int j=c->full2-1; j>=0; j--)
+  {
+    for (int i=0; i<c->full1; i++)
+    {
+      std::cout << ary[j*c->full1 + i] << " ";
+    }
+  std::cout << std::endl;
+  }
+}
 // temporary values
 static int fwd, bkwd; //dir=0;
+static double dfloor = .001;
 
 // Pointers to Temporary Arrays
 static double *di1=nullptr, *di2=nullptr, *dpar=nullptr,
@@ -65,6 +79,7 @@ void transport_init(int size)
   v1i   = array_init(size);
   v2i   = array_init(size);
   v3i   = array_init(size);
+  D     = array_init(size);
   F     = array_init(size);
   G     = array_init(size);
   H     = array_init(size);
@@ -79,51 +94,134 @@ void transport_step(Consts* c, Grid* g, double dt)
 
   // update density first
   //   1-direction
+  //std::cout << "d:" << std::endl;
+  //print_variable(c, g->d);
+  //std::cout << "v1:" << std::endl;
+  //print_variable(c, g->v1);
   interp1(c, g, g->d, di1, dt); // original density interpolated into dinterp1
+  single_bc(c, di1);
+  //std::cout << "di1:" << std::endl;
+  //print_variable(c, di1);
   density_flux1(c, g, di1); // density fluxes computed from dinterp1 (interpolated values)
+  //std::cout << "D:" << std::endl;
+  //print_variable(c, D);
   update_density1(c, g, g->d, dpar, dt);
+  single_bc(c, dpar);
+  //std::cout << "dpar:" << std::endl;
+  //print_variable(c, dpar);
   //   update specific energy
   specific_energy(c, g, g->d);
+  //std::cout << "eden:" << std::endl;
+  //print_variable(c, eden);
+
   //   2-direction
   interp2(c, g, dpar, di2, dt);
+  single_bc(c, di2);
+  //std::cout << "di2:" << std::endl;
+  //print_variable(c, di2);
   density_flux2(c, g, di2);
+  //std::cout << "D:" << std::endl;
+  //print_variable(c, D);
 
   // update all other variables
   //   1-direction
+  //std::cout << "eden" << std::endl;
+  //print_variable(c, eden);
   interp1(c, g, eden, edeni, dt);
+  single_bc(c, edeni);
+  //std::cout << "edeni" << std::endl;
+  //print_variable(c, edeni);
   energy_flux1(c, g, di1);
+  //std::cout << "F" << std::endl;
+  //print_variable(c, F);
   update_energy1(c, g, dt);
+  //std::cout << "e" << std::endl;
+  //print_variable(c, g->e);
   interp1(c, g, g->v1, v1i, dt);
+  single_bc(c, v1i);
+  //std::cout << "v1i" << std::endl;
+  //print_variable(c, v1i);
   s1_flux1(c, g, di1);
+  //std::cout << "G" << std::endl;
+  //print_variable(c, G);
   update_s11(c, g, g->d, dt);
+  //std::cout << "s1" << std::endl;
+  //print_variable(c, s1);
   interp1(c, g, g->v2, v2i, dt);
+  single_bc(c, v2i);
+  //std::cout << "e" << std::endl;
+  //print_variable(c, g->e);
   s2_flux1(c, g, di1);
+  //std::cout << "di1" << std::endl;
+  //print_variable(c, di1);
+  //std::cout << "H" << std::endl;
+  //print_variable(c, H);
+  //std::cout << "d" << std::endl;
+  //print_variable(c, g->d);
   update_s21(c, g, g->d, dt);
+  //std::cout << "s2" << std::endl;
+  //print_variable(c, s2);
   interp1(c, g, g->v3, v3i, dt);
+  single_bc(c, v3i);
+  //std::cout << "v3i" << std::endl;
+  //print_variable(c, v3i);
   s3_flux1(c, g, di1);
+  //std::cout << "J" << std::endl;
+  //print_variable(c, J);
   update_s31(c, g, g->d, dt);
-
+  //std::cout << "s3" << std::endl;
+  //print_variable(c, s3);
   update_density2(c, g, dpar, g->d, dt); //WATCH OUT FOR DENSITY FLOOR
+  //std::cout << "d" << std::endl;
+  //print_variable(c, g->d);
 
   //   2-direction
   specific_energy(c, g, dpar);
   interp2(c, g, eden, edeni, dt);
+  single_bc(c, edeni);
   energy_flux2(c, g, di2);
   update_energy2(c, g, dt);
   interp2(c, g, g->v1, v1i, dt);
+  single_bc(c, v1i);
   s1_flux2(c, g, di2);
+  //std::cout << "G" << std::endl;
+  //print_variable(c, G);
   update_s12(c, g, g->d, dt);
+  //std::cout << "s1" << std::endl;
+  //print_variable(c, s1);
   interp2(c, g, g->v2, v2i, dt);
+  single_bc(c, v2i);
   s2_flux2(c, g, di2);
+  //std::cout << "H" << std::endl;
+  //print_variable(c, H);
   update_s22(c, g, g->d, dt);
+  //std::cout << "s2" << std::endl;
+  //print_variable(c, s2);
   interp2(c, g, g->v3, v3i, dt);
+  single_bc(c, v3i);
   s3_flux2(c, g, di2);
+  //std::cout << "J" << std::endl;
+  //print_variable(c, J);
   update_s32(c, g, g->d, dt);
+  //std::cout << "s3" << std::endl;
+  //print_variable(c, s3);
 
   // convert momentum to velocity
+  //std::cout << "conversion" << std::endl;
+  single_bc(c, g->d);
   sconvert1(c, g);
   sconvert2(c, g);
   sconvert3(c, g);
+  //std::cout << "d" << std::endl;
+  //print_variable(c, g->d);
+  //std::cout << "e" << std::endl;
+  //print_variable(c, g->e);
+  //std::cout << "v1" << std::endl;
+  //print_variable(c, g->v1);
+  //std::cout << "v2" << std::endl;
+  //print_variable(c, g->v2);
+  //std::cout << "v3" << std::endl;
+  //print_variable(c, g->v3);
 }
 
 //   transport_destruct(void)
@@ -141,6 +239,7 @@ void transport_destruct(void)
   array_destruct(v1i);
   array_destruct(v2i);
   array_destruct(v3i);
+  array_destruct(D);
   array_destruct(F);
   array_destruct(G);
   array_destruct(H);
@@ -196,7 +295,8 @@ static void update_density1(Consts* c, Grid* g, double* din, double* dout, doubl
     for (int i=c->nghost; i<c->N1+c->nghost; i++)
     {
       fwd = j*c->full1 + i + 1; bkwd = fwd - 1;
-      dout[bkwd] = din[bkwd]+dt/c->dx*(D[bkwd] - D[fwd]);
+      dout[bkwd] = din[bkwd] + dt/c->dx*(D[bkwd] - D[fwd]);
+      dout[bkwd] = (dout[bkwd] < dfloor) ? dfloor : dout[bkwd];
     }
 }
 
@@ -227,8 +327,8 @@ static void s1_flux1(Consts* c, Grid* g, double* di)
 
 static void s2_flux1(Consts* c, Grid* g, double* di)
 {
-  for (int j=c->nghost-1; j<c->N2+c->nghost; j++)
-    for (int i=c->nghost-1; i<c->N1+c->nghost; i++)
+  for (int j=c->nghost; j<c->N2+c->nghost+1; j++)
+    for (int i=c->nghost; i<c->N1+c->nghost+1; i++)
     {
       fwd = j*c->full1 + i;
       H[fwd] = .5*v2i[fwd]*(di[fwd]*(g->v1[fwd]-c->v1g) +
@@ -284,7 +384,8 @@ static void update_density2(Consts* c, Grid* g, double* din, double* dout, doubl
     for (int i=c->nghost; i<c->N1+c->nghost; i++)
     {
       fwd = (j+1)*c->full1 + i; bkwd = fwd - c->full1;
-      dout[bkwd] = din[bkwd]+dt/c->dx*(D[bkwd] - D[fwd]);
+      dout[bkwd] = din[bkwd] + dt/c->dx*(D[bkwd] - D[fwd]);
+      dout[bkwd] = (dout[bkwd] < dfloor) ? dfloor : dout[bkwd];
     }
 }
 
@@ -304,12 +405,12 @@ static void energy_flux2(Consts* c, Grid* g, double* di)
 //     calculate fluxes for s1 in 1-direction
 static void s1_flux2(Consts* c, Grid* g, double* di)
 {
-  for (int j=c->nghost-1; j<c->N2+c->nghost; j++)
-    for (int i=c->nghost-1; i<c->N1+c->nghost; i++)
+  for (int j=c->nghost; j<c->N2+c->nghost+1; j++)
+    for (int i=c->nghost; i<c->N1+c->nghost+1; i++)
     {
       fwd = j*c->full1 + i;
-      G[fwd] = .5*v1i[fwd]*(di[fwd]*(g->v1[fwd]-c->v1g) +
-          di[fwd+1]*(g->v1[fwd+1]-c->v1g));
+      G[fwd] = .5*v1i[fwd]*(di[fwd]*(g->v2[fwd]-c->v2g) +
+          di[fwd-1]*(g->v2[fwd-1]-c->v2g));
     }
 }
 
@@ -319,8 +420,8 @@ static void s2_flux2(Consts* c, Grid* g, double* di)
     for (int i=c->nghost-1; i<c->N1+c->nghost; i++)
     {
       fwd = j*c->full1 + i;
-      H[fwd] = .5*v2i[fwd]*(di[fwd]*(g->v1[fwd]-c->v1g) +
-          di[fwd-c->full1]*(g->v1[fwd-c->full1]-c->v1g));
+      H[fwd] = .5*v2i[fwd]*(di[fwd]*(g->v2[fwd]-c->v2g) +
+          di[fwd+c->full1]*(g->v2[fwd+c->full1]-c->v2g));
     }
 }
 
@@ -330,7 +431,7 @@ static void s3_flux2(Consts* c, Grid* g, double* di)
     for (int i=c->nghost; i<c->N1+c->nghost+1; i++)
     {
       fwd = j*c->full1 + i;
-      J[fwd] = v3i[fwd]*di[fwd]*(g->v1[fwd]-c->v1g);
+      J[fwd] = v3i[fwd]*di[fwd]*(g->v2[fwd]-c->v2g);
     }
 }
 
@@ -340,7 +441,7 @@ static void update_energy1(Consts* c, Grid* g, double dt)
     for (int i=c->nghost; i<c->N1+c->nghost; i++)
     {
       fwd = j*c->full1 + i + 1; bkwd = fwd - 1;
-      g->e[bkwd] = g->e[bkwd]+dt/c->dx*(F[bkwd] - F[fwd]);
+      g->e[bkwd] = g->e[bkwd] + dt/c->dx*(F[bkwd] - F[fwd]);
     }
 }
 
@@ -383,7 +484,7 @@ static void update_energy2(Consts* c, Grid* g, double dt)
     for (int i=c->nghost; i<c->N1+c->nghost; i++)
     {
       fwd = (j+1)*c->full1 + i; bkwd = fwd - c->full1;
-      g->e[bkwd] = g->e[bkwd]+dt/c->dx*(F[bkwd] - F[fwd]);
+      g->e[bkwd] = g->e[bkwd] + dt/c->dx*(F[bkwd] - F[fwd]);
     }
 }
 
@@ -393,7 +494,7 @@ static void update_s12(Consts* c, Grid* g, double* di, double dt)
     for (int i=c->nghost; i<c->N1+c->nghost; i++)
     {
       fwd = (j+1)*c->full1 + i; bkwd = fwd - c->full1;
-      s1[fwd] = s1[fwd]*dt/c->dx*(G[bkwd] - G[fwd]);
+      s1[bkwd] = s1[bkwd] + dt/c->dx*(G[bkwd] - G[fwd]);
     }
 }
 
@@ -402,8 +503,8 @@ static void update_s22(Consts* c, Grid* g, double* di, double dt)
   for (int j=c->nghost; j<c->N2+c->nghost; j++)
     for (int i=c->nghost; i<c->N1+c->nghost; i++)
     {
-      fwd = j*c->full1 + i + 1; bkwd = fwd - 1;
-      s2[bkwd] = s2[bkwd] + dt/c->dy*(H[bkwd] - H[fwd]);
+      fwd = j*c->full1 + i; bkwd = fwd - c->full1;
+      s2[fwd] = s2[fwd] + dt/c->dy*(H[bkwd] - H[fwd]);
     }
 }
 
@@ -412,7 +513,7 @@ static void update_s32(Consts* c, Grid* g, double* di, double dt)
   for (int j=c->nghost; j<c->N2+c->nghost; j++)
     for (int i=c->nghost; i<c->N1+c->nghost; i++)
     {
-      fwd = j*c->full1 + i + 1; bkwd = fwd - 1;
+      fwd = (j+1)*c->full1 + i; bkwd = fwd - c->full1;
       s3[bkwd] = s3[bkwd] + dt/c->dx*(J[bkwd] - J[fwd]);
     }
 }

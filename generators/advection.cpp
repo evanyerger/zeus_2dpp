@@ -32,7 +32,6 @@ int main()
   Grid g;
   grid_init(c.size);
   g.init(c.size);
-  std::cout << c.size << std::endl; //////////////////////////////////////
 
   // Set up arrays for p, d, e, phi, v1, v2, v3, b1, b2, b3, etc.
   // p computed from e and d
@@ -48,13 +47,14 @@ int main()
 
   // Save state file
   int version = 0, ndumps = 0, nsteps = 0;
-  double start_time = 0.0;
+  double start_time = 0.0, last_dt = 0.0;
   std::string fname = path + "state.txt";
   std::ofstream statefile (fname.c_str());
   statefile << version << std::endl;
   statefile << ndumps  << std::endl;
   statefile << nsteps  << std::endl;
   statefile << start_time << std::endl;
+  statefile << last_dt << std::endl;
   statefile << c.N1 << std::endl;
   statefile << c.N2 << std::endl;
   statefile << c.nghost << std::endl;
@@ -83,6 +83,5 @@ int main()
   grid_destruct();
   g.destruct();
 
-  std::cout << "something ran" << std::endl;
 }
 

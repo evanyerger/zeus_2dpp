@@ -8,7 +8,7 @@
 #include "../timestep.h"
 #include "../bcs.h"
 #include "../io.h"
-
+; // THIS IS NECESSARY
 int main()
 {
   std::string sim_dir  = "../../sims/";
@@ -42,13 +42,14 @@ int main()
 
   // Save state file
   int version = 0, ndumps = 0, nsteps = 0;
-  double start_time = 0.0;
+  double start_time = 0.0, last_dt = 0.0;
   std::string fname = path + "state.txt";
   std::ofstream statefile (fname.c_str());
   statefile << version << std::endl;
   statefile << ndumps  << std::endl;
   statefile << nsteps  << std::endl;
   statefile << start_time << std::endl;
+  statefile << last_dt << std::endl;
   statefile << c.N1 << std::endl;
   statefile << c.N2 << std::endl;
   statefile << c.nghost << std::endl;

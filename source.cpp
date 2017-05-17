@@ -1,3 +1,4 @@
+#include <iostream>
 #include "constants.h"
 #include "grids.h"
 #include "source.h"
@@ -49,10 +50,8 @@ void source_step(Consts* c, Grid* g, double dt)
   //   Second substep
   subTwoQ(c, g, dt);
   subTwoVVE(c, g, dt);
-
   //   Third substep
   subThree(c, g, dt);
-
   //   Replace v1, v2
   replaceV(c, g);
 }
@@ -85,9 +84,10 @@ static void subOneX(Consts* c, Grid* g, double dt)
 {
   for (int j=c->start2; j<c->end2; j++) for (int i=c->start1; i<c->end1; i++)
   {
-    fwd = j*c->full2 + i; bkwd = j*c->full2 + i - 1;
+    fwd = j*c->full1 + i; bkwd = j*c->full1 + i - 1;
+
     v1na[fwd] = g->v1[fwd] - 2.*dt/c->dx*((g->p[fwd] - g->p[bkwd])/
-      (g->d[fwd] - g->d[bkwd])
+      (g->d[fwd] + g->d[bkwd])
 #ifdef SELF_GRAVITY
       + g->phi[fwd] - g->phi[bkwd]
 #endif
@@ -102,9 +102,9 @@ static void subOneY(Consts* c, Grid* g, double dt)
 {
   for (int j=c->start2; j<c->end2; j++) for (int i=c->start1; i<c->end1; i++)
   {
-    fwd = j*c->full2 + i; bkwd = (j-1)*c->full2 + i;
-    v1na[fwd] = g->v1[fwd] - 2.*dt/c->dy*((g->p[fwd] - g->p[bkwd])/
-      (g->d[fwd] - g->d[bkwd])
+    fwd = j*c->full1 + i; bkwd = (j-1)*c->full1 + i;
+    v2na[fwd] = g->v2[fwd] - 2.*dt/c->dy*((g->p[fwd] - g->p[bkwd])/
+      (g->d[fwd] + g->d[bkwd])
 #ifdef SELF_GRAVITY
       + g->phi[fwd] - g->phi[bkwd]
 #endif
@@ -118,10 +118,10 @@ static void subTwoQ(Consts* c, Grid* g, double dt)
 {
   for (int j=c->start2; j<c->end2; j++) for (int i=c->start1; i<c->end1; i++)
   {
-    bkwd = j*c->full2 + i;
-    val = g->v1[j*c->full2 + i + 1] - g->v1[bkwd];
+    bkwd = j*c->full1 + i;
+    val = g->v1[j*c->full1 + i + 1] - g->v1[bkwd];
     q1[bkwd] = (val < 0) ? c->c2*g->d[bkwd]*val*val : 0.0;
-    val = g->v2[(j+1)*c->full2 + i] - g->v2[bkwd];
+    val = g->v2[(j+1)*c->full1 + i] - g->v2[bkwd];
     q2[bkwd] = (val < 0) ? c->c2*g->d[bkwd]*val*val : 0.0;
   }
 }
@@ -132,9 +132,9 @@ static void subTwoVVE(Consts* c, Grid* g, double dt)
 {
   for (int j=c->start2; j<c->end2; j++) for (int i=c->start1; i<c->end1; i++)
   {
-    fwd = j*c->full2 + i; bkwd = j*c->full2 + i - 1; bkwd2 = (j-1)*c->full2 + i;
-    v1nb[fwd] = v1na[fwd] + 2*dt/c->dx*(q1[bkwd] - q1[fwd])/(g->d[fwd] - g->d[bkwd]);
-    v2nb[fwd] = v2na[fwd] + 2*dt/c->dy*(q1[bkwd2] - q1[fwd])/(g->d[fwd] - g->d[bkwd2]);
+    fwd = j*c->full1 + i; bkwd = j*c->full1 + i - 1; bkwd2 = (j-1)*c->full1 + i;
+    v1nb[fwd] = v1na[fwd] + 2*dt/c->dx*(q1[bkwd] - q1[fwd])/(g->d[fwd] + g->d[bkwd]);
+    v2nb[fwd] = v2na[fwd] + 2*dt/c->dy*(q1[bkwd2] - q1[fwd])/(g->d[fwd] + g->d[bkwd2]);
     enb[fwd] = g->e[fwd] - dt*(q1[fwd]*(g->v1[bkwd+2] - g->v1[fwd])/c->dx +
         q2[fwd]*(g->v2[bkwd2+2] - g->v2[fwd])/c->dy);
   }
@@ -147,8 +147,8 @@ static void subThree(Consts* c, Grid* g, double dt)
   val = c->gamma - 1;
   for (int j=c->start2; j<c->end2; j++) for (int i=c->start1; i<c->end1; i++)
   {
-    fwd = j*c->full2 + i;
-    divv = (g->v1[fwd+1] - g->v1[fwd])/c->dx + (g->v2[(j+1)*c->full2+i] - g->v2[fwd])/c->dy;
+    fwd = j*c->full1 + i;
+    divv = (g->v1[fwd+1] - g->v1[fwd])/c->dx + (g->v2[(j+1)*c->full1+i] - g->v2[fwd])/c->dy;
     g->e[fwd] = (1. - .5*dt*val*divv)/(1 + .5*dt*val*divv)*enb[fwd];
   }
 }
